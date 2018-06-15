@@ -1041,6 +1041,7 @@ func main() {
 	var conf_quiet = flag.Bool("quiet", false, "Disable status messages (logging)")
 	var conf_usecache = flag.Bool("usecache", false, "If true, accept cached results (if available), else force live scan.")
 	var conf_maxage = flag.Int("maxage", 0, "Maximum acceptable age of cached results, in hours. A zero value is ignored.")
+        var conf_zabbix = flag.Bool("zabbix", false, "If true, result will be an int mapped to a value that Zabbix can parse for monitoring.")
 	var conf_verbosity = flag.String("verbosity", "info", "Configure log verbosity: error, notice, info, debug, or trace.")
 	var conf_version = flag.Bool("version", false, "Print version and API location information and exit")
 
@@ -1121,7 +1122,7 @@ func main() {
 				return
 			}
 
-			if *conf_grade {
+			if *conf_grade || *conf_zabbix {
 				for i := range manager.results.responses {
 					results := []byte(manager.results.responses[i])
 
@@ -1130,25 +1131,63 @@ func main() {
 					err = json.Unmarshal(results, &labsReport)
 					// Check for error while unmarshalling. If yes then display error messsage and terminate the program
 					if err != nil {
-						log.Fatalf("[ERROR] JSON unmarshal error: %v", err)
+						if *conf_zabbix {
+							log.Fatalf("-1337")
+						} else {
+							log.Fatalf("[ERROR] JSON unmarshal error: %v", err)
+						}
 					}
 
 					// Printing the Hostname and IpAddress with grades
-					fmt.Println()
-					if !strings.EqualFold(labsReport.StatusMessage, "ERROR") {
-						fmt.Printf("HostName:\"%v\"\n", labsReport.Host)
-						for _, endpoints := range labsReport.Endpoints {
-							if endpoints.FutureGrade != "" {
-								fmt.Printf("\"%v\":\"%v\"->\"%v\"\n", endpoints.IpAddress, endpoints.Grade, endpoints.FutureGrade)
-							} else {
-								if endpoints.Grade != "" {
-									fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.Grade)
+					if *conf_grade {
+						fmt.Println()
+						if !strings.EqualFold(labsReport.StatusMessage, "ERROR") {
+							fmt.Printf("HostName:\"%v\"\n", labsReport.Host)
+							for _, endpoints := range labsReport.Endpoints {
+								if endpoints.FutureGrade != "" {
+									fmt.Printf("\"%v\":\"%v\"->\"%v\"\n", endpoints.IpAddress, endpoints.Grade, endpoints.FutureGrade)
 								} else {
-									// When no grade is seen print Status Message
-									fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.StatusMessage)
+									if endpoints.Grade != "" {
+										fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.Grade)
+									} else {
+										// When no grade is seen print Status Message
+										fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.StatusMessage)
+									}
 								}
 							}
 						}
+					} else if *conf_zabbix {
+						if logLevel >= LOG_INFO {
+			                                log.Println("[INFO] Zabbix mod v0.1 20180615MB")
+						}
+						if strings.EqualFold(labsReport.Status, "READY") {
+							result := labsReport.Endpoints[0]
+							grade := result.GradeTrustIgnored
+							switch grade {
+								case "A+","A-","A","B":
+									fmt.Printf("1")
+								case "C","D","E","F":
+									fmt.Printf("0")
+								case "T","M":
+									fmt.Printf("-1")
+								default:
+									if result.StatusMessage != "" {
+										if strings.Contains(result.StatusMessage, "not valid for domain name") {
+											fmt.Printf("-1")
+											grade = "M"
+										} else {
+											fmt.Printf("-1337")
+										}
+									} else {
+										fmt.Printf("-1337")
+									}
+							}
+							if logLevel >= LOG_INFO {
+								fmt.Printf(" | Grade: %v\n", grade)
+							}
+						} else {
+							fmt.Println("-1337")
+						}	
 					}
 				}
 			} else if *conf_json_flat {
