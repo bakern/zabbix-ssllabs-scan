@@ -1,8 +1,8 @@
-ssllabs-scan
+zabbix-ssllabs-scan
 ============
 
 This tool is a command-line client for the SSL Labs APIs, designed for
-automated and/or bulk testing.
+automated and/or bulk testing. Forked with the purpose to add a commandline option that'll output an int that Zabbix can parse.
 
 If you'd like to contribute, please have a look at the TODO file. For larger work,
 please get in touch first. For smaller work (there are some TODO comments in the
@@ -42,14 +42,16 @@ OPTIONS
 | --usecache  | false         | If true, accept cached results (if available), else force live scan |
 | --grade     | false         | Output only the hostname: grade |
 | --hostcheck | false         | If true, host resolution failure will result in a fatal error |
+| --zabbix    | false         | If true, result will be an int mapped to a value that Zabbix can parse for monitoring |
+
+## Example
+
+I use the following to get an output I want in Zabbix:
+```bash
+[xbytez@flux zabbix-ssllabs-scan]$ go build ssllabs-scan-v3.go
+[xbytez@flux zabbix-ssllabs-scan]$ ./ssllabs-scan-v3 "-quiet" "-usecache" "-maxage" "1" "-zabbix" "xbytez.io"
+```
 
 ## Third-Party Tools and Libraries
 
 A list of libraries and tools that rely on the SSL Labs APIs can be found on the SSL Labs web site: https://www.ssllabs.com/projects/ssllabs-apis/
-
-## Docker
-
-Docker images for this project are available at:
-
-* [https://github.com/jumanjihouse/docker-ssllabs-scan]
-  (https://github.com/jumanjihouse/docker-ssllabs-scan)
