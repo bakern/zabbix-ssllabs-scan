@@ -1164,9 +1164,9 @@ func main() {
 							result := labsReport.Endpoints[0]
 							grade := result.GradeTrustIgnored
 							switch grade {
-								case "A+","A-","A","B":
+								case "A+","A-","A":
 									fmt.Printf("1")
-								case "C","D","E","F":
+								case "B","C","D","E","F":
 									fmt.Printf("0")
 								case "T","M":
 									fmt.Printf("-1")
