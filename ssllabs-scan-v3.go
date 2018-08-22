@@ -1138,25 +1138,8 @@ func main() {
 						}
 					}
 
-					// Printing the Hostname and IpAddress with grades
-					if *conf_grade {
-						fmt.Println()
-						if !strings.EqualFold(labsReport.StatusMessage, "ERROR") {
-							fmt.Printf("HostName:\"%v\"\n", labsReport.Host)
-							for _, endpoints := range labsReport.Endpoints {
-								if endpoints.FutureGrade != "" {
-									fmt.Printf("\"%v\":\"%v\"->\"%v\"\n", endpoints.IpAddress, endpoints.Grade, endpoints.FutureGrade)
-								} else {
-									if endpoints.Grade != "" {
-										fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.Grade)
-									} else {
-										// When no grade is seen print Status Message
-										fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.StatusMessage)
-									}
-								}
-							}
-						}
-					} else if *conf_zabbix {
+					// Printing the Hostname and IpAddress with grades, and/or the Zabbix value
+					if *conf_zabbix {
 						if logLevel >= LOG_INFO {
 			                                log.Println("[INFO] Zabbix mod v0.1 20180615MB")
 						}
@@ -1182,12 +1165,29 @@ func main() {
 										fmt.Printf("-1337")
 									}
 							}
-							if logLevel >= LOG_INFO {
+							if (logLevel >= LOG_INFO) || *conf_grade {
 								fmt.Printf(" | Grade: %v\n", grade)
 							}
 						} else {
 							fmt.Println("-1337")
 						}	
+					} else if *conf_grade {
+                                                fmt.Println()
+                                                if !strings.EqualFold(labsReport.StatusMessage, "ERROR") {
+                                                        fmt.Printf("HostName:\"%v\"\n", labsReport.Host)
+                                                        for _, endpoints := range labsReport.Endpoints {
+                                                                if endpoints.FutureGrade != "" {
+                                                                        fmt.Printf("\"%v\":\"%v\"->\"%v\"\n", endpoints.IpAddress, endpoints.Grade, endpoints.FutureGrade)
+                                                                } else {
+                                                                        if endpoints.Grade != "" {
+                                                                                fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.Grade)
+                                                                        } else {
+                                                                                // When no grade is seen print Status Message
+                                                                                fmt.Printf("\"%v\":\"%v\"\n", endpoints.IpAddress, endpoints.StatusMessage)
+                                                                        }
+                                                                }
+                                                        }
+                                                }
 					}
 				}
 			} else if *conf_json_flat {
